@@ -135,9 +135,9 @@ To segment a single object, create a segment and paint inside and create another
     except : 
         print("Error slic array and otsu mask have different sizes")
 
-    for i in range(0, x-1):
-        for j in range(0, y-1):
-            for k in range(0, z-1):
+    for i in range(0, x):
+        for j in range(0, y):
+            for k in range(0, z):
                 if filledArray[i,j,k] == 0:# if voxel is in background
                     slicLabelArray[i,j,k]=0 #Replace the value in slic segmentation
 
