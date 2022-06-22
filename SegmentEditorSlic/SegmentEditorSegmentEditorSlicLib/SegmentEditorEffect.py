@@ -127,11 +127,11 @@ To segment a single object, create a segment and paint inside and create another
     slicLabelArray = sitk.GetArrayFromImage(slicLabel)
     filledArray = sitk.GetArrayFromImage(filledOtsuMask)
 
-    x,y,z = slicArray.shape
+    x,y,z = slicLabelArray.shape
 
-    number_of_segments = slicArray.max # See if any difference between slicArray[i,j,k]=0 or number_of_segments+1
+    number_of_segments = slicLabelArray.max # See if any difference between slicLabelArray[i,j,k]=0 or number_of_segments+1
     try :
-        slicArray.shape == filledArray.shape
+        slicLabelArray.shape == filledArray.shape
     except : 
         print("Error slic array and otsu mask have different sizes")
 
@@ -139,7 +139,7 @@ To segment a single object, create a segment and paint inside and create another
         for j in range(0, y-1):
             for k in range(0, z-1):
                 if filledArray[i,j,k] == 0:# if voxel is in background
-                    slicArray[i,j,k]=0 #Replace the value in slic segmentation
+                    slicLabelArray[i,j,k]=0 #Replace the value in slic segmentation
 
     # IJKtoRAS coordinate system
     ijkToRas = vtk.vtkMatrix4x4()
