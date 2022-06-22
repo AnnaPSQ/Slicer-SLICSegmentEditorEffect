@@ -123,7 +123,8 @@ To segment a single object, create a segment and paint inside and create another
     otsuMask = sitk.OtsuThreshold(image,0,1) # 0 is the background value
     filledOtsuMask = sitk.BinaryFillhole(otsuMask)
 
-    slicArray = sitk.GetArrayFromImage(slicLabel)
+    # Convert sitk image to array
+    slicLabelArray = sitk.GetArrayFromImage(slicLabel)
     filledArray = sitk.GetArrayFromImage(filledOtsuMask)
 
     x,y,z = slicArray.shape
@@ -139,11 +140,6 @@ To segment a single object, create a segment and paint inside and create another
             for k in range(0, z-1):
                 if filledArray[i,j,k] == 0:# if voxel is in background
                     slicArray[i,j,k]=0 #Replace the value in slic segmentation
-
-    # Convert sitk image to array
-    slicLabelArray = sitk.GetArrayFromImage(slicLabel)
-    print('Input VolumeAsArray', inputVolumeAsArray)
-    print('Labels', slicLabel)
 
     # IJKtoRAS coordinate system
     ijkToRas = vtk.vtkMatrix4x4()
