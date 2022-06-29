@@ -33,10 +33,8 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
     return qt.QIcon()
 
   def helpText(self):
-    return """Existing segments are grown to fill the image.
-The effect is different from the Grow from seeds effect in that smoothness of structures can be defined, which can prevent leakage.
-To segment a single object, create a segment and paint inside and create another segment and paint outside on each axis.
-"""
+    return """Segments are created using the Simple Linear Iterative Clustering (SLIC) algorithm. 
+    Feel free to edit the created segments with other segment editor effects. """
 
   def setupOptionsFrame(self):
 
