@@ -15,7 +15,7 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
   def __init__(self, scriptedEffect):
     scriptedEffect.name = 'SegmentEditorSlic'
     scriptedEffect.perSegment = False # this effect operates on all segments at once (not on a single selected segment)
-    scriptedEffect.requireSegments = False # this effect requires segment(s) existing in the segmentation
+    scriptedEffect.requireSegments = False # this effect doesn't require segment(s) existing in the segmentation
     AbstractScriptedSegmentEditorEffect.__init__(self, scriptedEffect)
 
   def clone(self):
@@ -38,17 +38,6 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
 
   def setupOptionsFrame(self):
 
-     # Object scale slider
-    self.objectScaleMmSlider = slicer.qMRMLSliderWidget()
-    self.objectScaleMmSlider.setMRMLScene(slicer.mrmlScene)
-    self.objectScaleMmSlider.quantity = "length" # get unit, precision, etc. from MRML unit node
-    self.objectScaleMmSlider.minimum = 0
-    self.objectScaleMmSlider.maximum = 10
-    self.objectScaleMmSlider.value = 2.0
-    self.objectScaleMmSlider.setToolTip('Increasing this value smooths the segmentation and reduces leaks. This is the sigma used for edge detection.')
-    self.scriptedEffect.addLabeledOptionsWidget("Object scale:", self.objectScaleMmSlider)
-    self.objectScaleMmSlider.connect('valueChanged(double)', self.updateMRMLFromGUI)
-
     # Apply button
     self.applyButton = qt.QPushButton("Apply")
     self.applyButton.objectName = self.__class__.__name__ + 'Apply'
@@ -56,27 +45,10 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
     self.scriptedEffect.addOptionsWidget(self.applyButton)
     self.applyButton.connect('clicked()', self.onApply)
 
-  def createCursor(self, widget):
-    # Turn off effect-specific cursor for this effect
-    return slicer.util.mainWindow().cursor
-
-  def setMRMLDefaults(self):
-    self.scriptedEffect.setParameterDefault("ObjectScaleMm", 2.0)
-
-  def updateGUIFromMRML(self):
-    objectScaleMm = self.scriptedEffect.doubleParameter("ObjectScaleMm")
-    wasBlocked = self.objectScaleMmSlider.blockSignals(True)
-    self.objectScaleMmSlider.value = abs(objectScaleMm)
-    self.objectScaleMmSlider.blockSignals(wasBlocked)
-
-  def updateMRMLFromGUI(self):
-    self.scriptedEffect.setParameter("ObjectScaleMm", self.objectScaleMmSlider.value)
-
   def onApply(self):
 
     # Get segmentation node and potentially existing segments
     segmentationNode = self.scriptedEffect.parameterSetNode().GetSegmentationNode()
-    segmentIds = segmentationNode.GetSegmentation().GetSegmentIDs()  # export all segments
 
     # This can be a long operation - indicate it to the user
     qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
@@ -143,11 +115,16 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
     ijkToRas = vtk.vtkMatrix4x4()
     inputVolume.GetIJKToRASMatrix(ijkToRas)
  
-    #Create node for labelmap
+    #Create label map node with final segmentation
     labelmapVolumeNode = slicer.util.addVolumeFromArray(slicLabelArray, ijkToRAS=ijkToRas, name='SlicLabels', nodeClassName='vtkMRMLLabelMapVolumeNode')
 
-    # Add segments to segmentation node from labelmap
-    slicer.modules.segmentations.logic().ImportLabelmapToSegmentationNode(labelmapVolumeNode, segmentationNode)    
+    # Add segments to segmentation node from labelmap, to be able to modify segments
+    slicer.modules.segmentations.logic().ImportLabelmapToSegmentationNode(labelmapVolumeNode, segmentationNode) 
+
+    #Delete LabelMap node   
+    slicer.mrmlScene.RemoveNode(labelmapVolumeNode) 
+
+    #self.scriptedEffect.modifySelectedSegmentByLabelmap(labelmapVolumeNode, slicer.qSlicerSegmentEditorAbstractEffect.ModificationModeSet)  
 
     qt.QApplication.restoreOverrideCursor()
 
