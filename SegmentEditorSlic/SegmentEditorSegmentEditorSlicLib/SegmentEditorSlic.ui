@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SlicSITK</class>
+ <widget class="qMRMLWidget" name="SlicSITK">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>314</width>
+    <height>331</height>
+   </rect>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>Select filters to create background mask</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="backgroundMask">
+     <item>
+      <property name="text">
+       <string>Simple Otsu + Filling Holes</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Otsu + Erode + Filling Holes slice by slice</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item>
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>Select method to remove background from segmentation</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QComboBox" name="removeBackgroundMethod">
+     <item>
+      <property name="text">
+       <string>Pixel per pixel</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Segment per segment</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
