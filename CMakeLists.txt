@@ -4,12 +4,12 @@ project(SegmentEditorSlic)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "https://www.slicer.org/wiki/Documentation/Nightly/Extensions/SegmentEditorSlic")
+set(EXTENSION_HOMEPAGE "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect")
 set(EXTENSION_CATEGORY "Segmentation")
-set(EXTENSION_CONTRIBUTORS "Anna Pasquier (Linum)")
-set(EXTENSION_DESCRIPTION "Try to add slic to segment editor effects")
-set(EXTENSION_ICONURL "https://www.example.com/Slicer/Extensions/SegmentEditorSlic.png")
-set(EXTENSION_SCREENSHOTURLS "https://www.example.com/Slicer/Extensions/SegmentEditorSlic/Screenshots/1.png")
+set(EXTENSION_CONTRIBUTORS "Anna Pasquier (LINUM)")
+set(EXTENSION_DESCRIPTION "Volume segmentation using SLIC algorithm.")
+set(EXTENSION_ICONURL "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect/blob/master/SegmentEditorSlic.png")
+set(EXTENSION_SCREENSHOTURLS "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect/blob/master/screenshot.png")
 set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
