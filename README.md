@@ -6,6 +6,7 @@ This 3DSlicer extension is an additional Segment Editor Effect that segments the
 SLICSegmentEditorEffect aims to reduce the time spent on volume annotation by creating segments with SLIC.
 
 Example result of SLIC segmentation:
+
 ![](screenshot.png?raw=true "Example segmentation result")
 
 ## Documentation
