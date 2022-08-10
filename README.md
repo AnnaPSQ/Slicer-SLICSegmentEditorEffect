@@ -1,7 +1,7 @@
 # Slicer-SLICSegmentEditorEffect
 This 3DSlicer extension is an additional Segment Editor Effect that segments the master volume with the Simple Linear Iterative Clustering (SLIC) algorithm. 
 
-[![GitHub license](https://github.com/Slicer/Slicer/blob/main/License.txt))](/LICENSE)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
 ## Application Example
 
