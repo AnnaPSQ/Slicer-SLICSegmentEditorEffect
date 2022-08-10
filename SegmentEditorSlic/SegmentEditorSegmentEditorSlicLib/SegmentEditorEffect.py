@@ -221,7 +221,8 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
 
     # Define slic filter
     slicFilter = sitk.SLICImageFilter()
-    slicFilter.SetEnforceConnectivity(False)
+    slicFilter.SetSpatialProximityWeight(100)
+    slicFilter.SetEnforceConnectivity(True)
     slicLabel = slicFilter.Execute(image)
 
     # Convert sitk image to array
