@@ -47,13 +47,102 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
     self.scriptedEffect.addOptionsWidget(uiWidget)
     self.ui = slicer.util.childWidgetVariables(uiWidget)
 
-    # Apply button
-    self.applyButton = qt.QPushButton("Apply")
-    self.applyButton.objectName = self.__class__.__name__ + 'Apply'
-    self.applyButton.setToolTip("Accept previewed result")
-    self.scriptedEffect.addOptionsWidget(self.applyButton)
-    self.applyButton.connect('clicked()', self.onApply)
-  
+    # Connections
+
+    self.ui.applySlicKmeansButton.connect('clicked()', self.onApplySlicKmeans)
+    self.ui.applySlicButton.connect('clicked()', self.onApplySlic)
+
+  def applySlic(self, imageArray):
+    """
+    Apply Slic algorithm.
+
+    Args:
+      image : NumPy array image
+
+    Returns:
+      Numpy Array segmentation array
+    """
+    image = sitk.GetImageFromArray(imageArray)
+
+    #1. Apply SLIC 
+    labels = sitk.SLIC(image, spatialProximityWeight=100.0,
+                      enforceConnectivity=True,
+                      initializationPerturbation=False)
+    return(sitk.GetArrayFromImage(labels))
+
+  def segmentMeanGrayscale3D(self, originalImageArray, segmentationLabelArray):
+    """
+    Calcul the mean color of each segment of a segmentation.
+    For 3D grayscale images.
+
+    Args:
+        segmentationLabelArray : NumPy Array segmentation
+        originalImageArray : Numpy Array of the original image.
+
+    Returns:
+        segmentationMeanColorArray : NumPy Array segmentation which 
+                  value of each segment is the meaning of RGB value of the original 
+                  image.
+        medium_grays : list of mean colors of segments
+        segments_arrays : table which save position of each segment 
+                          segments_arrays[:,:,:,i] has value 1 for all the position in segment i
+    """
+    x,y,z = originalImageArray.shape
+    segmentationMeanColorArray = np.zeros([x,y,z])
+    number_of_segments = segmentationLabelArray.max()+1
+
+    try :
+        originalImageArray.shape == segmentationLabelArray.shape
+    except : 
+        print("Error segmention and original image have different sizes")
+
+    segments_arrays = np.zeros([x, y, z, number_of_segments])
+    current_segment = 0
+    nombre_pixels_per_segment = np.zeros([number_of_segments])
+    medium_grays = np.zeros([number_of_segments])
+    # calcul the means value of FGB for each segment
+    for i in range(0, x):
+      for j in range(0, y):
+        for k in range (0, z):
+          current_segment = segmentationLabelArray[i,j,k]
+          nombre_pixels_per_segment[current_segment] += 1
+          medium_grays[current_segment] += originalImageArray[i,j,k]
+          segments_arrays[i,j,k,current_segment] += 1
+
+    #Calcul the meaning
+    for i in range(number_of_segments):
+      if nombre_pixels_per_segment[i] != 0:
+        medium_grays[i] = medium_grays[i]/nombre_pixels_per_segment[i]
+
+    return medium_grays, segments_arrays
+
+  def kmeansClassificationGrayscale3D(self, originalImageArray, segmentationLabelArray, clusterNumber):
+    """
+    Classify segments with K-kmeans algorithm.
+    For 3D grayscale images.
+
+    Args:
+        originalImageArray : NumPy Array of orriginal volume
+        segmentationLabelArray : NumPy Array of segmentation
+
+    Returns:
+        pred : Predicted labels for each segment (ndarray, shape=numberof segments)
+    """
+    # Sklearn is needed
+    try:
+      from sklearn.cluster import KMeans
+    except:
+      logging.error('You need to import sklearn')
+      logging.info("Write the following command line in Python interactor to win time for next utilisation  slicer.util.pip_install('scikit-learn')")
+      slicer.util.pip_install('scikit-learn')
+      from sklearn.cluster import KMeans
+
+    medium_grays, segments_arrays = self.segmentMeanGrayscale3D(originalImageArray, segmentationLabelArray)
+    kmeans = KMeans(n_clusters=clusterNumber, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    pred = kmeans.fit_predict(medium_grays.reshape(-1,1))
+
+    return pred, segments_arrays
+
   def backgroundMask(self, volumeImage):
     """
     Generate a background mask with Otsu and FillHole
@@ -166,7 +255,69 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
                 slicLabelArray = np.where(slicLabelArray == i, 0, slicLabelArray)
     return slicLabelArray
 
-  def onApply(self):
+  def onApplySlicKmeans(self):
+    """ Create segmentation and classify segments with KMeans algorithm with options chosen by user 
+    1. Apply slic on the master volume
+    2. Predict segment class with kMeans
+    3. Rename segments"""
+
+    # Get segmentation node and potentially existing segments
+    segmentationNode = self.scriptedEffect.parameterSetNode().GetSegmentationNode()
+
+    # This can be a long operation - indicate it to the user
+    qt.QApplication.setOverrideCursor(qt.Qt.WaitCursor)
+
+    # Allow users revert to this state by clicking Undo
+    self.scriptedEffect.saveStateForUndo()
+    # Get master volume from segmentation
+    masterVolume = self.scriptedEffect.parameterSetNode().GetMasterVolumeNode()
+    #inputVolume = self.scriptedEffect.masterVolumeImageData()
+    inputVolume = masterVolume
+    if not inputVolume :
+      raise ValueError("Input volume is invalid")
+
+    import time
+    startTime = time.time()
+    logging.info('Processing started')
+
+    # Create a superpixel segmentation with SimpleITK SLIC filter    
+    # Retrieve the input volume as a np array
+    inputVolumeAsArray = slicer.util.arrayFromVolume(inputVolume)
+    # Create a sitk image
+    image = sitk.GetImageFromArray(inputVolumeAsArray)
+
+    #1.Apply SLic algorythm with choosen parameters on the input volume 
+    slicLabelArray = self.applySlic(inputVolumeAsArray)
+
+    #2. Predict segment class with KMeans
+
+    clusterNumber = self.ui.clusterNumber.currentIndex + 2 # clusterNumber index start at 0
+    prediction, segments_arrays = self.kmeansClassificationGrayscale3D(inputVolumeAsArray, slicLabelArray, clusterNumber)
+
+    # IJKtoRAS coordinate system
+    ijkToRas = vtk.vtkMatrix4x4()
+    inputVolume.GetIJKToRASMatrix(ijkToRas)
+
+    import random
+    for i in range(prediction.shape[0]):
+      #Create the volume of the segment
+      segmentVolumeNode = slicer.util.addVolumeFromArray(segments_arrays[:,:,:,i], ijkToRAS=ijkToRas, name='SlicLabels', nodeClassName='vtkMRMLLabelMapVolumeNode')
+      # Add segment to segmentation node from
+      slicer.modules.segmentations.logic().ImportLabelmapToSegmentationNode(segmentVolumeNode, segmentationNode)
+      # Modify the name of the added segment
+      segmentation = segmentationNode.GetSegmentation()
+      number_of_segments = segmentation.GetNumberOfSegments()
+      current_seg = segmentation.GetNthSegment(number_of_segments-1)
+      current_seg.SetName(str(prediction[i]))
+      r,g,b = random.random(),  random.random(),  random.random()
+      current_seg.SetColor(r,g,b)   
+
+    #self.scriptedEffect.modifySelectedSegmentByLabelmap(labelmapVolumeNode, slicer.qSlicerSegmentEditorAbstractEffect.ModificationModeSet)  
+    qt.QApplication.restoreOverrideCursor()
+    stopTime = time.time()
+    logging.info(f'Processing completed in {stopTime-startTime:.2f} seconds')
+
+  def onApplySlic(self):
     """ Create segmentation with options chosen by user 
     1. Apply slic on the master volume
     2. Create background mask from master volume according to 
@@ -200,43 +351,31 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
     inputVolume = masterVolume
 
     if not inputVolume :
-      raise ValueError("Input or output volume is invalid")
+      raise ValueError("Input volume is invalid")
 
     import time
     startTime = time.time()
     logging.info('Processing started')
 
-    # Create a superpixel segmentation with SimpleITK SLIC filter
-    # Using an Otsu filter and BinaryFillhole as a background mask
-    ## Needed packages installation
-    
+    # Create a superpixel segmentation with SimpleITK SLIC filter    
 
-    ##1. Retrieve the input volume as a np array
+    # Retrieve the input volume as a np array
     inputVolumeAsArray = slicer.util.arrayFromVolume(inputVolume)
-
-    #2.Apply SLic algorythm with choosen parameters on the input volume 
 
     # Create a sitk image
     image = sitk.GetImageFromArray(inputVolumeAsArray)
 
-    # Define slic filter
-    slicFilter = sitk.SLICImageFilter()
-    slicFilter.SetSpatialProximityWeight(100)
-    slicFilter.SetEnforceConnectivity(True)
-    slicLabel = slicFilter.Execute(image)
+    #1.Apply SLic algorythm with choosen parameters on the input volume 
+    slicLabelArray = self.applySlic(inputVolumeAsArray)
 
-    # Convert sitk image to array
-    slicLabelArray = sitk.GetArrayFromImage(slicLabel)
-
-    #3. Background Treatment
-
-    #3.1 Generate Background Mask
+    # Background Treatment
+    #2 Generate Background Mask
     if background_mask_index == 1: 
       backgroundArray = self.sliceBySliceBackgroundMask(image)
     else:
       backgroundArray = self.backgroundMask(image)
 
-    #3.2 Remove background from segments
+    #3 Remove background from segments
     if remove_background_method_index == 1:
       labelArray = self.removeBackgroundSegmentPerSegment(slicLabelArray, backgroundArray)
     else:
@@ -245,6 +384,7 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
     # IJKtoRAS coordinate system
     ijkToRas = vtk.vtkMatrix4x4()
     inputVolume.GetIJKToRASMatrix(ijkToRas)
+    print(ijkToRas)
  
     #Create label map node with final segmentation
     labelmapVolumeNode = slicer.util.addVolumeFromArray(labelArray, ijkToRAS=ijkToRas, name='SlicLabels', nodeClassName='vtkMRMLLabelMapVolumeNode')
