@@ -312,6 +312,9 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
       r,g,b = random.random(),  random.random(),  random.random()
       current_seg.SetColor(r,g,b)   
 
+      #Delete LabelMap node   
+      slicer.mrmlScene.RemoveNode(segmentVolumeNode)
+
     #self.scriptedEffect.modifySelectedSegmentByLabelmap(labelmapVolumeNode, slicer.qSlicerSegmentEditorAbstractEffect.ModificationModeSet)  
     qt.QApplication.restoreOverrideCursor()
     stopTime = time.time()
