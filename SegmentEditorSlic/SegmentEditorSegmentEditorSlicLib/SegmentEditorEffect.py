@@ -127,6 +127,7 @@ class SegmentEditorEffect(AbstractScriptedSegmentEditorEffect):
 
     Returns:
         pred : Predicted labels for each segment (ndarray, shape=numberof segments)
+        segments_arrays : List of 3D Arrays. One Array = one segment. prediction[i]= prediction for segments_arrays[:,:,:,i]
     """
     # Sklearn is needed
     try:
