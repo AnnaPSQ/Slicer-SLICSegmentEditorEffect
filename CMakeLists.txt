@@ -4,12 +4,12 @@ project(SegmentEditorSlic)
 
 #-----------------------------------------------------------------------------
 # Extension meta-information
-set(EXTENSION_HOMEPAGE "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect")
+set(EXTENSION_HOMEPAGE "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect#readme")
 set(EXTENSION_CATEGORY "Segmentation")
-set(EXTENSION_CONTRIBUTORS "Anna Pasquier (LINUM)")
-set(EXTENSION_DESCRIPTION "Volume segmentation using SLIC algorithm.")
-set(EXTENSION_ICONURL "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect/blob/master/SegmentEditorSlic.png")
-set(EXTENSION_SCREENSHOTURLS "https://github.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect/blob/master/screenshot.png")
+set(EXTENSION_CONTRIBUTORS "Anna Pasquier (LINUM, UQAM)")
+set(EXTENSION_DESCRIPTION "This extension provides a Segment Editor Effect enabling users to segment volume with the Simple Linear Iterative Clustering (SLIC) algorithm.")
+set(EXTENSION_ICONURL "https://raw.githubusercontent.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect/master/SegmentEditorSlic.png")
+set(EXTENSION_SCREENSHOTURLS "https://raw.githubusercontent.com/AnnaPSQ/Slicer-SLICSegmentEditorEffect/master/screenshot.png")
 set(EXTENSION_DEPENDS "NA") # Specified as a list or "NA" if no dependencies
 
 #-----------------------------------------------------------------------------
